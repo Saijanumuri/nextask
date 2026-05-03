@@ -80,7 +80,7 @@
    - Build command: `npm run build`
    - Publish directory: `dist`
 3. [ ] Set environment variables:
-   - [ ] `VITE_API_URL` = `https://your-backend.onrender.com`
+   - [ ] `https://vnextask.netlify.app/` = `https://your-backend.onrender.com`
 4. [ ] Deploy
 5. [ ] Note frontend URL
 
