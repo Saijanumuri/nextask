@@ -67,11 +67,23 @@ async function connectMongoDB() {
   }
 
   try {
-    await mongoose.connect(MONGO_URI);
+    console.log('🔄 Attempting to connect to MongoDB...');
+    console.log('📍 Connection string (masked):', MONGO_URI.replace(/\/\/([^:]+):([^@]+)@/, '//$1:****@'));
+    
+    await mongoose.connect(MONGO_URI, {
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    });
+    
     useMongoose = true;
     console.log('✅ Connected to MongoDB with Mongoose');
+    console.log('📊 Database:', mongoose.connection.db.databaseName);
   } catch (error) {
     console.error('❌ MongoDB connection failed:', error.message);
+    console.error('🔍 Error details:', error.name);
+    if (error.reason) {
+      console.error('🔍 Reason:', error.reason);
+    }
     console.log('⚠️  Falling back to file-based storage');
     await loadUsersFromFile();
   }

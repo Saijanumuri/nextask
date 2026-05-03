@@ -31,6 +31,8 @@ export const useAuthStore = create<AuthStore>()(
       
       register: async (name: string, dob: string) => {
         let passkey = generateRandomPasskey();
+        console.log('📝 Registration started');
+        console.log('🌐 API URL:', API_URL);
         
         // Check if passkey exists on backend
         let isUnique = false;
@@ -38,6 +40,7 @@ export const useAuthStore = create<AuthStore>()(
         
         while (!isUnique && attempts < 10) {
           try {
+            console.log('🔍 Checking passkey uniqueness:', passkey);
             const response = await fetch(`${API_URL}/api/auth/check-passkey`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -48,9 +51,11 @@ export const useAuthStore = create<AuthStore>()(
             
             if (!data.exists) {
               isUnique = true;
+              console.log('✅ Passkey is unique');
             } else {
               passkey = generateRandomPasskey();
               attempts++;
+              console.log('🔄 Passkey exists, generating new one');
             }
           } catch (error) {
             console.warn('Could not check passkey uniqueness, using local check:', error);
@@ -67,6 +72,7 @@ export const useAuthStore = create<AuthStore>()(
         
         // Register on backend
         try {
+          console.log('📡 Registering user on backend...');
           const response = await fetch(`${API_URL}/api/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -74,6 +80,7 @@ export const useAuthStore = create<AuthStore>()(
           });
           
           const data = await response.json();
+          console.log('📦 Registration response:', data);
           
           if (!data.success) {
             throw new Error(data.error || 'Registration failed');
@@ -81,7 +88,8 @@ export const useAuthStore = create<AuthStore>()(
           
           console.log('✅ User registered on backend');
         } catch (error) {
-          console.warn('⚠️ Backend registration failed, saving locally only:', error);
+          console.error('⚠️ Backend registration error:', error);
+          console.warn('⚠️ Backend registration failed, saving locally only');
         }
         
         // Also save to local IndexedDB for offline access
@@ -94,20 +102,27 @@ export const useAuthStore = create<AuthStore>()(
         };
         
         await db.users.add(newUser);
+        console.log('✅ User saved to local IndexedDB');
         
         return passkey;
       },
       
       login: async (passkey: string) => {
+        console.log('🔐 Login attempt with passkey:', passkey);
+        console.log('🌐 API URL:', API_URL);
+        
         try {
           // Try backend authentication first
+          console.log('📡 Calling backend API...');
           const response = await fetch(`${API_URL}/api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ passkey }),
           });
           
+          console.log('📥 Response status:', response.status);
           const data = await response.json();
+          console.log('📦 Response data:', data);
           
           if (data.success && data.user) {
             // Backend authentication successful
@@ -147,7 +162,8 @@ export const useAuthStore = create<AuthStore>()(
             return false;
           }
         } catch (error) {
-          console.warn('⚠️ Backend unavailable, trying local authentication:', error);
+          console.error('⚠️ Backend error:', error);
+          console.warn('⚠️ Backend unavailable, trying local authentication');
           
           // Fallback to local IndexedDB authentication
           const user = await db.users.where('passkey').equals(passkey).first();
@@ -164,6 +180,7 @@ export const useAuthStore = create<AuthStore>()(
             return true;
           }
           
+          console.log('❌ User not found in local storage');
           return false;
         }
       },
